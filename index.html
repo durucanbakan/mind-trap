@@ -229,6 +229,9 @@ button{font-family:inherit;color:inherit;border:none;background:none;cursor:poin
 .opt.cell.lit{opacity:1;transform:scale(1.06);box-shadow:0 0 30px currentColor}
 .eq{display:flex;align-items:center;justify-content:center;gap:8px;font-size:clamp(22px,6vw,30px);font-weight:700;padding:8px 14px;border-radius:12px;background:rgba(255,255,255,.035);width:100%;max-width:420px}
 .eq.q{border:1px dashed rgba(251,191,36,.55);color:var(--gold)}
+.scale{display:flex;align-items:center;gap:10px;width:100%;max-width:440px;animation:optIn .4s backwards}
+.scale .pan{flex:1;min-height:58px;display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:2px;padding:8px;border-radius:14px;font-size:26px;background:rgba(255,255,255,.05);border:1px solid var(--glass-b);border-bottom:3px solid rgba(168,85,247,.6)}
+.scale .beam{font-size:26px;filter:drop-shadow(0 0 10px rgba(168,85,247,.7))}
 .suspects{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:100%}
 .suspect{padding:12px;border-radius:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);display:flex;gap:10px;align-items:flex-start;animation:optIn .4s backwards}
 .suspect .av{font-size:28px}
@@ -348,7 +351,7 @@ button{font-family:inherit;color:inherit;border:none;background:none;cursor:poin
     <div class="panel glass">
       <h2>NASIL OYNANIR</h2>
       <ul class="rules">
-        <li>🧩 <b>20 bölüm</b> var ve her biri farklı bir zihinsel mekanik kullanır. İlerledikçe zorlaşır, 20. bölüm bir <b>final boss</b>'tur.</li>
+        <li>🧩 <b>21 bölüm</b> var ve her biri farklı bir zihinsel mekanik kullanır. İlerledikçe zorlaşır, 21. bölüm bir <b>final boss</b>'tur.</li>
         <li>❤️ <b>3 canın</b> var. Yanlış cevap ya da süre bitimi 1 can götürür, combo sıfırlanır ve <b>-50 puan</b> alırsın. Bölüm yeni bir soruyla tekrar başlar.</li>
         <li>⭐ Doğru cevap <b>+100</b>, hızlı cevap <b>+50 bonus</b>. Combo çarpanı: 2x <b>+%20</b>, 3x <b>+%30</b>, 4x <b>+%40</b>, 5x+ <b>+%50</b>. Kalan süre de bonus puana dönüşür.</li>
         <li>💡 Her oyunda <b>3 ipucu</b> hakkın var. İpucu yanlış bir seçeneği eler ya da sorunun bir kısmını açıklar. Her ipucu <b>-30 puan</b>.</li>
@@ -376,7 +379,7 @@ button{font-family:inherit;color:inherit;border:none;background:none;cursor:poin
     <div id="hud" class="glass">
       <div class="hud-group">
         <div id="lives"></div>
-        <div class="stat">BÖLÜM<b><span id="lvlNum">1</span>/20</b></div>
+        <div class="stat">BÖLÜM<b><span id="lvlNum">1</span>/21</b></div>
       </div>
       <div class="hud-group right">
         <div class="stat" style="position:relative">SKOR<b id="score">0</b><span id="popHost"></span></div>
@@ -480,7 +483,7 @@ const WORDS = {
 const ALL_WORDS = Object.values(WORDS).flat();
 const DAYS = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
 const DIFF_LABELS = ['KOLAY', 'ORTA', 'ZOR', 'ÇOK ZOR', 'BOSS'];
-const diffOf = i => i < 4 ? 0 : i < 9 ? 1 : i < 14 ? 2 : i < 19 ? 3 : 4;
+const diffOf = i => i < 4 ? 0 : i < 9 ? 1 : i < 14 ? 2 : i < LEVELS.length - 1 ? 3 : 4;
 
 /* =========================================================
    3) SES (Web Audio API — harici dosya yok)
@@ -707,7 +710,7 @@ function genContradiction() {
 }
 
 /* =========================================================
-   9) 20 BÖLÜM
+   9) 21 BÖLÜM
    Her bölüm: { name, icon, desc, time, manualTimer?, build(stage, api) }
    api.correct(msg) / api.wrong(msg) / api.penalty(msg) / api.later(fn,ms) /
    api.every(fn,ms) / api.setHint(fn) / api.setKey(fn) / api.startTimer() / api.memo
@@ -1123,7 +1126,20 @@ const LEVELS = [
     api.setHint(() => { const h = vals.find(x => x.el.textContent === '?'); if (!h) return false; h.el.textContent = h.v; return 'Bir değer açığa çıktı.'; });
   } },
 
-/* ---------- 20. FINAL — MIND TRAP ---------- */
+/* ---------- 20. TERAZİ ---------- */
+{ name: 'TERAZİ', icon: '🧮', desc: 'Dengedeki terazilerden sembollerin ağırlık ilişkisini çöz.', time: 70,
+  build(s, api) {
+    const [A, B, C] = shuffle(['💎', '⚽', '🎲', '🔔', '🧲', '🍎']).slice(0, 3);
+    const k1 = rand(2, 4), k2 = rand(2, 3), m = rand(1, 3); // 1 A = k1 B, 1 C = k2 A
+    const scale = (l, r) => el('div', 'scale', `<div class="pan">${l}</div><div class="beam">⚖️</div><div class="pan">${r}</div>`);
+    s.append(el('div', 'q-sub', 'Her terazi <b>dengede</b>. Aynı semboller aynı ağırlıkta.'));
+    s.append(scale(A, B.repeat(k1)), scale(C, A.repeat(k2)));
+    s.append(el('div', 'eq q', `${C.repeat(m)} = ? × ${B}`));
+    const ans = m * k1 * k2, o = numOptions(ans, [m * (k1 + k2), k1 * k2, ans + k1]);
+    choice(api, s, o.items, o.idx, { okMsg: `1 ${C} = ${k1 * k2} ${B}`, wrongMsg: `1 ${C} = ${k2} ${A} = ${k1 * k2} ${B} → <b>${ans}</b>` });
+  } },
+
+/* ---------- 21. FINAL — MIND TRAP ---------- */
 { name: 'FINAL — MIND TRAP', icon: '😈', desc: 'Oyun boyunca yaptıkların sana karşı kullanılacak.', time: 120,
   build(s, api) {
     const m = api.memo, Qs = [];
@@ -1289,15 +1305,15 @@ function unvanOf(score) { return score >= 4000 ? 'MIND TRAP MASTER' : score >= 2
 function endGame(type) {
   G.token++; G.timerRunning = false; G.resolved = true; $('#modal').classList.remove('show');
   const total = Math.round((Date.now() - G.startTime) / 1000);
-  const reached = type === 'win' ? 20 : G.level + 1;
+  const reached = type === 'win' ? LEVELS.length : G.level + 1;
   const acc = G.correct + G.wrong ? G.correct / (G.correct + G.wrong) : 0;
-  const mind = Math.round(acc * 60 + (type === 'win' ? 40 : (G.level / 20) * 40));
+  const mind = Math.round(acc * 60 + (type === 'win' ? 40 : (G.level / LEVELS.length) * 40));
   const unvan = unvanOf(G.score);
   const isBest = Store.add({ score: G.score, level: reached, title: unvan, win: type === 'win', date: new Date().toLocaleDateString('tr-TR') });
   const T = { win: ['🏆', 'Beynin sistemi çözdü.'], trap: ['😈', 'Mind Trap seni yendi.'], lose: ['🧠', 'Zihnin bu sefer pes etti.'] }[type];
   $('#resEmoji').textContent = T[0]; $('#resTitle').textContent = T[1]; $('#resTitle').className = 'res-title' + (type === 'win' ? ' win' : '');
   $('#resUnvan').textContent = '🎖 ' + unvan; $('#resBest').hidden = !isBest || G.score === 0;
-  $('#stLevel').textContent = reached + '/20'; $('#stCorrect').textContent = G.correct; $('#stWrong').textContent = G.wrong;
+  $('#stLevel').textContent = reached + '/' + LEVELS.length; $('#stCorrect').textContent = G.correct; $('#stWrong').textContent = G.wrong;
   $('#stCombo').textContent = 'x' + G.maxCombo; $('#stTime').textContent = fmtTime(total); $('#stMind').textContent = mind + '/100';
   show('result');
   // Skoru sayarak göster
@@ -1312,7 +1328,7 @@ function endGame(type) {
 function renderScores() {
   const d = Store.load(); const box = $('#scoreList'); box.innerHTML = '';
   if (!d.list.length) { box.innerHTML = '<div class="empty">Henüz skor yok. İlk rekoru sen kır! 🧠</div>'; return; }
-  d.list.forEach((e, i) => box.append(el('div', 'score-row', `<span class="rk">#${i + 1}</span><div>${e.win ? '🏆 ' : ''}${e.title}<small>Bölüm ${e.level}/20 · ${e.date}</small></div><span class="sc">${e.score}</span>`)));
+  d.list.forEach((e, i) => box.append(el('div', 'score-row', `<span class="rk">#${i + 1}</span><div>${e.win ? '🏆 ' : ''}${e.title}<small>Bölüm ${e.level}/${LEVELS.length} · ${e.date}</small></div><span class="sc">${e.score}</span>`)));
 }
 function refreshBest() { $('#bestScore').textContent = Store.load().best; }
 
